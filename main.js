@@ -1,50 +1,49 @@
-const electron          = require('electron');
-const path              = require('path');
+const {app, BrowserWindow, ipcMain} = require('electron');
+const path = require('path');
 
-const confModule        = require('./conf_module/.');
-const fileModule        = require('./file_module/.');
-// const workspace = require('./workspace');
+const fileModule = require('./file_module/.');
 
-const BrowserWindow     = electron.BrowserWindow;
-const app               = electron.app;
-const ipc               = electron.ipcMain;
+const ipc = ipcMain;
+const testDir = path.join(__dirname, 'TestWorkspace');
 
+let mainWindow;
 
-const workingDir = path.join(__dirname, 'TestWorkspace');
+function createWindow () {
 
-function main () {
-    // Check conf setup curr/new one
-    confModule.configure();
+  mainWindow = new BrowserWindow({
+    width: 1280,
+    height: 720,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
 
-    // Main window
-    const mainWindow = new BrowserWindow({
-      width: 1920,
-      height: 960,
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: true
-      }
-    });
-    mainWindow.loadFile('index.html');
+  mainWindow.loadFile('index.html');
+  mainWindow.webContents.openDevTools();
+  mainWindow.on('closed',  () => {
+    mainWindow = null
+  })
 }
-  
-app.whenReady().then(main);
+
+
+app.on('ready', createWindow);
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+  if (process.platform !== 'darwin') app.quit()
 });
 
 app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        main();
-    }
+  if (mainWindow === null) createWindow()
 });
 
 // IPC
 
-ipc.on('explorer:get-list', (e) => {
-    fsStats = fileModule.readDir(workingDir);
-    e.reply('explorer:setup-list', {...fsStats});
+ipc.on('explorer:get-list', (event) => {
+    console.log('IPC MAIN [explorer:get-list]');
+    event.reply( 'explorer:setup-list', fileModule.readDir(testDir) );
+});
+
+ipc.on('explorer:select-list-item', (event, data) => {
+    console.log('IPC MAIN [explorer:select-list-item] data: ', data);
 });

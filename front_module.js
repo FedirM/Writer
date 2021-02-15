@@ -22,7 +22,8 @@ ipc.on('explorer:setup-list', (e, fsStats) => {
 // FUNCTIONS
 
 function SetupExplorerList(fsStats) {
-    if(fsStat.isEmpty){
+    FileListHtmlElement.innerHTML = '';
+    if(fsStats.isEmpty){
         FileListHtmlElement.insertAdjacentHTML(
             'afterbegin',
             `<h3 style="width: 100%; text-align: center;">
@@ -30,11 +31,23 @@ function SetupExplorerList(fsStats) {
             </h3>`
         );
     } else {
-        fsStat.list.forEach((el) => {
+        fsStats.list.forEach((el) => {
             FileListHtmlElement.insertAdjacentHTML(
                 'beforeend',
                 `<div id="${el}" class="file-list-item">${el}</div>`
             );
+            document.getElementById(el).addEventListener('click', ExplorerListItemHandler);
         });
     }
+}
+
+function ExplorerListItemHandler(event){
+    let items = document.getElementsByClassName('active-file-list-item');
+    for(let el of items) {
+        el.classList.remove('active-file-list-item');
+    };
+
+    this.classList.add('active-file-list-item');
+
+    ipc.send('explorer:select-list-item', {fileName: this.id});
 }
