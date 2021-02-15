@@ -1,13 +1,11 @@
 
 const path          = require('path');
 const fs            = require('fs');
+const ipc           = require('electron');
 
 
-const workingDir = path.join(__dirname, 'TestWorkspace');
-
-
-function readWorkingDir() {
-    let files = fs.readdirSync( workingDir );
+function readDir( dirPath ) {
+    let files = fs.readdirSync( dirPath );
 
     return {
         isEmpty: (files.length === 0) ? true : false,
@@ -17,5 +15,5 @@ function readWorkingDir() {
 
 
 module.exports = {
-    readWorkingDir
+    readDir
 };
