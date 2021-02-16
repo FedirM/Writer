@@ -1,7 +1,6 @@
 
-const path          = require('path');
-const fs            = require('fs');
-const ipc           = require('electron');
+const fs = require('fs');
+const { dialog } = require('electron');
 
 
 function readDir( dirPath ) {
@@ -15,7 +14,42 @@ function readDir( dirPath ) {
     };
 }
 
+function readFile( filePath ){
+    const jsonFile = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(jsonFile);
+}
+
+function saveFile( filePath, data ){
+    let fileData = readFile(filePath);
+    fileData.data = data;
+    fileData = JSON.stringify(fileData);
+    console.log('NewestData: ', fileData);
+
+    try{
+        fs.writeFileSync(filePath, fileData);
+        console.log('Seems all OK');
+        return true;
+    } catch (e) {
+        console.log('Save file failed');
+        return false;
+    }
+}
+
+function createFile( opt ){
+    
+}
+
+function createProject( opt ){
+    //
+}
+
+function openDir(){
+    return dialog.showOpenDialogSync({ properties: ['openDirectory'] })[0];
+}
 
 module.exports = {
-    readDir
+    readDir,
+    readFile,
+    saveFile,
+    openDir
 };
