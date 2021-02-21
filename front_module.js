@@ -41,6 +41,13 @@ ipc.on('edito:saveStatus', (e, status) => {
     );
 });
 
+ipc.on('snakbar:error', (e, message) => {
+    showSnakbar(message, true);
+});
+
+ipc.on('snakbar:message', (e, message) => {
+    showSnakbar(message, false);
+});
 
 // AUTOSAVE
 

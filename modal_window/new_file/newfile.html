@@ -4,26 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New File</title>
+    <link rel="stylesheet" type="text/css" href="newfile.css" />
 </head>
-<body>
+<body onload="init()">
     <main>
         <div class="main-area">
             <div class="file-name">
-                FILENAME
+                <input id="input-filename" class="text-line" type="text" placeholder="Filename" />
             </div>
             <div class="file-tags">
-                <div id="list1" class="dropdown-check-list" tabindex="100">
-                    <span class="anchor">Select Fruits</span>
-                    <ul class="items">
-                      <li><input type="checkbox" />Apple </li>
-                      <li><input type="checkbox" />Orange</li>
-                      <li><input type="checkbox" />Grapes </li>
-                      <li><input type="checkbox" />Berry </li>
-                      <li><input type="checkbox" />Mango </li>
-                      <li><input type="checkbox" />Banana </li>
-                      <li><input type="checkbox" />Tomato</li>
-                    </ul>
+                <div class="all-tags">
+                    <div class="label">
+                        Tag List
+                    </div>
+                    <div class="search">
+                        <input id="searchLine" type="text" class="search-input" placeholder="Search..."
+                        onkeyup="searchFilter()"/>
+                    </div>
+                    <div id="full" class="list"></div>
                 </div>
+                <div class="selected-tags">
+                    <div class="label">
+                        Selected Tags
+                    </div>
+                    <div class="newTag">
+                        <input id="newTagLine" type="text" class="new-tag-input" placeholder="New Tag"/>
+                        <button class="addNewTag" onclick="addNewTag()">Add</button>
+                    </div>
+                    <div id="selected" class="list"></div>
+                </div>
+            </div>
+        </div>
+        <div class="action-area">
+            <div class="action">
+                <button class="cancel">Cancel</button>
+            </div>
+            <div class="action">
+                <button class="save" onclick="save()">Save</button>
             </div>
         </div>
     </main>

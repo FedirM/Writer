@@ -1,21 +1,22 @@
-
+const {ipcRenderer} = require('electron');
 const fs = require('fs');
 const path = require('path');
 
+const ipc = ipcRenderer;
+
+let confPath = path.join(__dirname, 'conf');
+
 const defaultGlobalConf = {
     currProject: {
-        projectName: '',
         pwd: '',
         currFile: ''
     },
     recent: [
         {
-            projectName: 'Test-1',
             pwd: 'C:\\Work\\Privat\\Desktop\\Writer\\TestWorkspace',
             currFile: 'chapter-1'
         },
         {
-            projectName: 'Test-2',
             pwd: 'C:\\Work\\Privat\\Desktop\\Writer\\TestWorkspace-2',
             currFile: 'chapter-2'
         }
@@ -29,68 +30,85 @@ const defaultGlobalConf = {
 };
 
 const defaultProjectConf = {
-    projectName: '',
     pwd: '',
     currFile: ''
 }
 
 class Config {
 
-#conf = {};
+#glConf = {};
 
     constructor() {
         this.configure();
     }
 
     configure() {
-        let confPath = path.join(__dirname, 'conf');
         try{
             console.log('Looking for config file in: ', confPath);
             if(fs.existsSync(confPath)){
                 console.log('Found conf');
                 let cnfg = fs.readFileSync(confPath, 'utf-8');
-                this.#conf = JSON.parse(cnfg);
+                this.#glConf = JSON.parse(cnfg);
             } else {
                 console.log('Conf was not find (else)');
-                this.#conf = {...defaultGlobalConf};
+                this.#glConf = {...defaultGlobalConf};
             }
         }catch(err){
-            console.log('Config constructor: PZDCH');
-            this.#conf = {...defaultGlobalConf};
+            this.#glConf = {...defaultGlobalConf};
+        }
+    }
+
+    saveConfig() {
+        this.updateProjectInRecent();
+        try{
+            console.log('Saving conf: ', confPath);
+            let data = JSON.stringify(this.#glConf, '\n', 2);
+            fs.writeFileSync(confPath, data, 'utf-8');
+        } catch (e) {
+            ipc.send('snakbar:error', e.message || 'Config save error');
         }
     }
 
     // Recent projects
 
     getRecentProjects() {
-        return [...this.#conf.recent];
+        return [...this.#glConf.recent];
     }
 
     getRecentProjectByName( prName ) {
-        let pr = this.#conf.recent.find((el) => { return el.projectName === prName });
-        return {...pr};
+        let res = this.#glConf.recent.find((el) => { return (path.basename(el.pwd) === prName) });
+        return {...res};
+    }
+
+    updateProjectInRecent() {
+        let indx = this.#glConf.recent.findIndex((el) => { return el.pwd === this.#glConf.currProject.pwd });
+        this.#glConf.recent[indx] = {...this.#glConf.currProject};
     }
 
     // Curr project
 
-    getCurrProjectSettings() {
-        return {...this.#conf.currProject};
+    openProject( dirname ) {
+        this.saveConfig();
+        this.#glConf.currProject.pwd = dirname;
+        let fres = this.#glConf.recent.find((el) => {return el.pwd === dirname});
+        if( fres ) {
+            this.#glConf.currProject.currFile = fres.currFile;
+        } else {
+            this.#glConf.currProject.currFile = '';
+        }
     }
 
-    setCurrWorkingProjectName( prname ) {
-        this.#conf.currProject.projectName = prname;
+    getCurrProjectSettings() {
+        return {...this.#glConf.currProject};
     }
 
     setCurrWorkingFile( filename ) {
-        this.#conf.currProject.currFile = filename;
-    }
-
-    setCurrWorkingDir( dirname ) {
-        this.#conf.currProject.pwd = dirname;
+        this.saveConfig();
+        this.#glConf.currProject.currFile = filename;
     }
 
     showConfig() {
-        console.log('CONFIG: ', this.#conf);
+        console.log('CONFIG: ', this.#glConf);
     }
 }
 

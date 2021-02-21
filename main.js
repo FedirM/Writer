@@ -12,10 +12,11 @@ const fileModule    = require('./file_module/.');
 
 const ipc = ipcMain;
 const testDir = path.join(__dirname, 'TestWorkspace');
+let showSnakbarSaveStatus = true;
 
-config.setCurrWorkingDir( testDir );
+config.openProject( testDir );
 
-let mainWindow;
+let mainWindow, modalWindow;
 
 function createWindow() {
   config.showConfig();
@@ -30,36 +31,33 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
   mainWindow.webContents.openDevTools();
-  mainWindow.on('closed',  () => {
-    quit();
-    mainWindow = null
-  });
+  mainWindow.on('closed',  () => { mainWindow = null });
 
 
   createNewFileModal();
 }
 
 function createNewFileModal() {
-  let modal = new BrowserWindow({
-    width: 600,
-    height: 400,
-    frame: false,
-    resizable: false,
-    modal: true,
+  modalWindow = new BrowserWindow({
+    width: 700,
+    height: 550,
+    // frame: false,
+    // resizable: false,
+    // modal: true,
     parent: mainWindow,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     }
   });
-  modal.loadFile('./modal_window/new_file/newfile.html');
-  modal.webContents.openDevTools();
-  modal.on('closed',  () => {modal = null});
+  modalWindow.loadFile('./modal_window/new_file/newfile.html');
+  modalWindow.webContents.openDevTools();
+  modalWindow.on('closed',  () => {modal = null});
 }
 
 function createMenu() {
   const recentProjects = config.getRecentProjects().map((el) => {
-    return { label: el.projectName, click: openRecentProject }
+    return { label: path.basename(el.pwd), click: openRecentProject }
   });
   const menuTempl = [
     {
@@ -68,10 +66,6 @@ function createMenu() {
         {
           label: 'New File',
           click: () => { console.log('New file') }
-        },
-        {
-          label: 'New Project',
-          click: () => { console.log('New Project') }
         },
         {
           type: 'separator'
@@ -108,17 +102,14 @@ function createMenu() {
 }
 
 function openProject() {
-  config.setCurrWorkingDir( fileModule.openDir() );
+  config.openProject( fileModule.openDir() );
   readProjectFiles();
 }
 
 function openRecentProject(menuItem) {
   let conf = config.getRecentProjectByName( menuItem.label );
-  config.setCurrWorkingProjectName( conf.projectName );
-  config.setCurrWorkingFile( conf.currFile );
-  config.setCurrWorkingDir( conf.pwd );
+  config.openProject( conf.pwd );
   readProjectFiles();
-  openCurrFile();
 }
 
 function openCurrFile() {
@@ -141,16 +132,22 @@ function readProjectFiles() {
     'explorer:setup-list',
     fileModule.readDir(config.getCurrProjectSettings().pwd)
   );
+  
+  openCurrFile();
 }
-
 
 
 function quit() {
-
-  //TODO save app state
+  showSnakbarSaveStatus = false;
+  saveCurrFile();
+  config.saveConfig();
   app.quit();
 }
 
+app.on('before-quit', (event) => {
+  console.log('before-quit INSTRUCTION');
+  quit();
+});
 
 app.on('ready', () => {
   createWindow();
@@ -166,11 +163,20 @@ app.on('activate', () => {
 });
 
 // IPC
+// Snakbar
 
-ipc.on('explorer:get-list', (event) => {
-    // console.log('IPC MAIN [explorer:get-list]');
+ipc.on('snakbar:error', (event, message) => {
+  mainWindow.webContents.send('snakbar:error', message);
+});
+
+ipc.on('snakbar:message', (event, message) => {
+  mainWindow.webContents.send('snakbar:message', message);
+});
+
+// EDITOR
+
+ipc.on('explorer:get-list', () => {
     readProjectFiles();
-    //event.reply( 'explorer:setup-list', fileModule.readDir(testDir) );
 });
 
 ipc.on('explorer:select-list-item', (event, data) => {
@@ -182,12 +188,17 @@ ipc.on('explorer:select-list-item', (event, data) => {
 ipc.on('editor:save', (event, data) => {
   let projectSettings = config.getCurrProjectSettings();
   if( !projectSettings.currFile || !projectSettings.pwd ) return;
-  // console.log('IPC MAIN [editor:save] data: ', data);
-  event.reply(
-    'edito:saveStatus',
-    fileModule.saveFile(
-      path.join(projectSettings.pwd, projectSettings.currFile + '.json'),
-      data
-    )
+  let saveRes = fileModule.saveFile(
+    path.join(projectSettings.pwd, projectSettings.currFile + '.json'),
+    data
   );
+  if( showSnakbarSaveStatus ){
+    event.reply('edito:saveStatus', saveRes);
+  }
+});
+
+// NEWFILE module window
+ipc.on('newfile:close-window-save', (event, args) => {
+  console.log('NEWFILE: ', args);
+  modalWindow.close();
 });

@@ -1,0 +1,22 @@
+{
+  "currProject": {
+    "pwd": "C:\\Work\\Privat\\Desktop\\Writer\\TestWorkspace",
+    "currFile": "chapter-3"
+  },
+  "recent": [
+    {
+      "pwd": "C:\\Work\\Privat\\Desktop\\Writer\\TestWorkspace",
+      "currFile": "chapter-3"
+    },
+    {
+      "pwd": "C:\\Work\\Privat\\Desktop\\Writer\\TestWorkspace-2",
+      "currFile": "chapter-1"
+    }
+  ],
+  "settings": {
+    "autosave": {
+      "enabled": true,
+      "interval": 300000
+    }
+  }
+}
